@@ -1,0 +1,62 @@
+# compiler options for AA (using INTEL compiler & OpenMPI)
+#
+# module purge
+# module use /home/ar0s/modules
+# module load prgenv/intel intel/2021.4.0 openmpi/4.1.1.1 hdf5-parallel/1.10.6 netcdf4-parallel/4.7.4 xios/trunk/rev2320-nmpi
+#
+#
+# NCDF_INC    netcdf4 include file
+# NCDF_LIB    netcdf4 library
+# XIOS_INC    xios include file    (taken into accound only if key_xios is activated)
+# XIOS_LIB    xios library         (taken into accound only if key_xios is activated)
+# OASIS_INC   oasis include file   (taken into accound only if key_oasis3 is activated)
+# OASIS_LIB   oasis library        (taken into accound only if key_oasis3 is activated)
+#
+# FC          Fortran compiler command
+# FCFLAGS     Fortran compiler flags
+# FFLAGS      Fortran 77 compiler flags
+# LD          linker
+# LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries
+# FPPFLAGS    pre-processing flags
+# AR          assembler
+# ARFLAGS     assembler flags
+# MK          make
+# USER_INC    complete list of include files
+# USER_LIB    complete list of libraries to pass to the linker
+# CC          C compiler used to compile conv for AGRIF
+# CFLAGS      compiler flags used with CC
+#
+# Note that:
+#  - unix variables "$..." are accpeted and will be evaluated before calling fcm.
+#  - fcm variables are starting with a % (and not a $)
+#
+#---------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+# All NETCDF and HDF paths are empty as they are automatically defined through environment
+# variables by the load of modules
+#---------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+#
+#
+%NCDF_INC            ${NETCDF4_INCLUDE}
+%NCDF_LIB            ${NETCDF4_LIB} -L${HDF5_DIR}/lib -Wl,-rpath,${HDF5_DIR}/lib -lhdf5_hl -lhdf5 -lz
+%XIOS_INC            -I${XIOS_INC}
+%XIOS_LIB            -L${XIOS_LIB} -lxios -lstdc++
+%OASIS_INC           -I${OASIS_DIR}/include
+%OASIS_LIB           -L${OASIS_DIR}/lib -lpsmile.MPI1 -lmct -lmpeu -lscrip
+
+%CPP                 cpp
+%FC                  mpifort -c -cpp
+%FCFLAGS             -march=core-avx2 -i4 -r8 -g -O0 -debug all -traceback -fp-model strict -ftrapuv -check all,noarg_temp_created -fpe-all0 -ftz -init=arrays,snan,huge
+%FFLAGS              %FCFLAGS
+%LD                  mpifort
+%LDFLAGS             
+%FPPFLAGS            -P -traditional
+%AR                  ar
+%ARFLAGS             rs
+%MK                  gmake
+%USER_INC            %XIOS_INC %OASIS_INC %NCDF_INC
+%USER_LIB            %XIOS_LIB %OASIS_LIB %NCDF_LIB
+
+%CC                  mpicc
+%CFLAGS              -O0

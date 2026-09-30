@@ -1,0 +1,5 @@
+./varcommon_mod.F90:80:    type TRunState
+./varcommon_mod.F90:86:    end type TRunState
+./varcommon_mod.F90:87:    type(TRunState),target :: runstate_t        ! avoid Error TempVar when runstate Not Inited
+./varcommon_mod.F90:88:    type(TRunState),pointer:: runstate
+./varcommon_mod.F90:199:    runstate=>runstate_t

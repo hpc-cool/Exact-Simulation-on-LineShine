@@ -1,0 +1,21 @@
+%HDF5_HOME           /home/share/hanxiang/mysoftware/hdf5/1.12.3-bisheng-hmpi
+%NETCDF_HOME         /home/share/hanxiang/mysoftware/netcdf/4.7.4_4.5.3-bisheng-hmpi
+
+%NETCDF_INC            -I%NETCDF_HOME/include -I%HDF5_HOME/include
+%NETCDF_LIB            -L%NETCDF_HOME/lib -lnetcdff -lnetcdf
+
+%CPP	             cpp -Dkey_nosignedzero 
+%FC	             mpif90 -c -cpp
+%FCFLAGS             -fdefault-real-8 -O3 -funroll-all-loops -fcray-pointer -ffree-line-length-none
+%FFLAGS              %FCFLAGS
+%LD                  mpif90
+%LDFLAGS             
+%FPPFLAGS            -P -C -traditional
+%AR                  ar
+%ARFLAGS             rs
+%MK                  make
+%USER_INC            %NETCDF_INC
+%USER_LIB            %NETCDF_LIB
+
+%CC                  cc
+%CFLAGS              -O0

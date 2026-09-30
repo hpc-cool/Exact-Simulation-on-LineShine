@@ -1,0 +1,238 @@
+#if defined show_comments
+! These comments are not intended to be retained during preprocessing; i.e. do not define "show_comments"
+!!----------------------------------------------------------------------
+!! NEMO/OCE 4.x , NEMO Consortium (2020)
+!! Software governed by the CeCILL license (see ./LICENSE)
+!!----------------------------------------------------------------------
+! This header file contains preprocessor definitions and macros used in the do-loop substitutions introduced
+! between version 4.0 and 4.2. The primary aim of these macros is to assist in future applications of tiling
+! to improve performance. This is expected to be achieved by alternative versions of these macros in selected
+! locations. The initial introduction of these macros simply replaced all identifiable nested 2D- and 3D-loops
+! with single line statements (and adjusts indenting accordingly). Do loops were identifiable if they comformed
+! to either:
+!                                       DO jk = ....
+!   DO jj = ....                           DO jj = ...
+!      DO ji = ....                           DO ji = ...
+!         .                   OR                 .
+!         .                                      .
+!     END DO                                  END DO
+!   END DO                                 END DO
+!                                       END DO
+! and white-space variants thereof.
+!
+! Additionally, only loops with recognised jj and ji loops limits were treated; these were:
+! Lower limits of 1, 2 or fs_2
+! Upper limits of jpi, jpim1 or fs_jpim1 (for ji) or jpj, jpjm1 or fs_jpjm1 (for jj)
+!
+! The macro naming convention takes the form: DO_2D( L, R, B, T) where:
+!   L is the Left   offset from the PE's inner domain;
+!   R is the Right  offset from the PE's inner domain
+!   B is the Bottom offset from the PE's inner domain;
+!   T is the Top    offset from the PE's inner domain;
+!
+! So, given an inner domain of 2,jpim1 and 2,jpjm1, a typical example would replace:
+!
+!   DO jj = 2, jpj
+!      DO ji = 1, jpim1
+!         .
+!         .
+!      END DO
+!   END DO
+!
+! with:
+!
+!   DO_2D( 1, 0, 0, 1 )
+!      .
+!      .
+!   END_2D
+!
+! similar conventions apply to the 3D loops macros. jk loop limits are retained through macro arguments
+! and are not restricted. This includes the possibility of strides for which an extra set of DO_3DS
+! macros are defined.
+!
+! In the following definitions the inner PE domain is defined by start indices of (Nis0, Njs0) and end
+! indices of (Nie0, Nje0) where:
+!
+! Nis0 =   1 + nn_hls     Njs0 =   1 + nn_hls
+! Nie0 = jpi - nn_hls     Nje0 = jpj - nn_hls
+!
+#endif
+
+
+#define A1Di(H) ntsi-(H):ntei+(H)
+#define A1Dj(H) ntsj-(H):ntej+(H)
+#define A2D(H) A1Di(H),A1Dj(H)
+#define A1Di_T(T) (ntsi-nn_hls-1)*T+1:
+#define A1Dj_T(T) (ntsj-nn_hls-1)*T+1:
+#define A2D_T(T) A1Di_T(T),A1Dj_T(T)
+#define JPK  :
+#define JPTS  :
+#define KJPT  :
+
+#define DO_2D(L, R, B, T) DO jj = ntsj-(B), ntej+(T) ; DO ji = ntsi-(L), ntei+(R)
+#define DO_2D_OVR(L, R, B, T) DO_2D(L-(L+R)*nthl, R-(R+L)*nthr, B-(B+T)*nthb, T-(T+B)*ntht)
+#define DO_3D(L, R, B, T, ks, ke) DO jk = ks, ke ; DO_2D(L, R, B, T)
+#define DO_3D_OVR(L, R, B, T, ks, ke) DO jk = ks, ke ; DO_2D_OVR(L, R, B, T)
+
+#define DO_3DS(L, R, B, T, ks, ke, ki) DO jk = ks, ke, ki ; DO_2D(L, R, B, T)
+#define DO_3DS_OVR(L, R, B, T, ks, ke, ki) DO jk = ks, ke, ki ; DO_2D_OVR(L, R, B, T)
+
+#define END_2D   END DO   ;   END DO
+#define END_3D   END DO   ;   END DO   ;   END DO
+
+
+
+
+
+#ifdef MTHREAD 
+
+#define TD_INIT type(TD_T), POINTER :: TD; INTEGER :: ST, ED, TiD, NT; LOGICAL :: IsMainTh; TD=>TDS(gettid()); NT=TD%NT;TiD=TD%TiD;IsMainTh=TD%IsMainTh
+
+#define PTD  TD
+#define DTD  type(TD_T) :: TD
+
+#define SYNCA call MultiThreadSync()
+
+#define SYNCB
+#define SYNCC
+
+
+#define ZDO_2D(L, R, B, T) DO jj = TD%ntsj-(B), TD%ntej+(T); DO ji = TD%ntsi-(L), TD%ntei+(R)
+#define ZDO_2D_OVR(L, R, B, T) ZDO_2D(L-(L+R)*nthl, R-(R+L)*nthr, B-(B+T)*nthb, T-(T+B)*ntht)
+
+#define ZDO_3D(L, R, B, T, ks, ke)  DO jk = ks, ke; ZDO_2D(L, R, B, T)
+#define ZDO_3D_OVR(L, R, B, T, ks, ke) DO jk = ks, ke ; ZDO_2D_OVR(L, R, B, T)
+#define ZDO_3DS(L, R, B, T, ks, ke, ki)  DO jk = ks, ke, ki ; ZDO_2D(L, R, B, T)
+#define ZDO_3DS_OVR(L, R, B, T, ks, ke, ki)  DO jk = ks, ke, ki; ZDO_2D_OVR(L, R, B, T)
+
+#define ZEND_2D  END DO  ;  END DO
+#define ZEND_3D  END DO  ;  END DO  ;  END DO
+#define ZA1Di(H) TD%ntsi-(H):TD%ntei+(H)  
+#define ZA1Dj(H) TD%ntsj-(H):TD%ntej+(H)
+#define ZA2D(H) ZA1Di(H),ZA1Dj(H)
+#define ZA1Di_T(T) (TD%ntsi-nn_hls-1)*T+1:
+#define ZA1Dj_T(T) (TD%ntsj-nn_hls-1)*T+1:
+#define ZA2D_T(T) ZA1Di_T(T),ZA1Dj_T(T)
+
+
+#define YDO_2D(L, R, B, T) DO jj = TD%ntsj-TD%uflg*(B), TD%ntej+TD%dflg*(T); DO ji = TD%ntsi-TD%lflg*(L), TD%ntei+TD%rflg*(R)
+#define YDO_2D_OVR(L, R, B, T) YDO_2D(L-(L+R)*nthl, R-(R+L)*nthr, B-(B+T)*nthb, T-(T+B)*ntht)
+
+#define YDO_3D(L, R, B, T, ks, ke)  DO jk = ks, ke; YDO_2D(L, R, B, T)
+#define YDO_3D_OVR(L, R, B, T, ks, ke) DO jk = ks, ke ; YDO_2D_OVR(L, R, B, T)
+#define YDO_3DS(L, R, B, T, ks, ke, ki)  DO jk = ks, ke, ki ; YDO_2D(L, R, B, T)
+#define YDO_3DS_OVR(L, R, B, T, ks, ke, ki)  DO jk = ks, ke, ki; YDO_2D_OVR(L, R, B, T)
+#define YEND_2D  END DO  ;  END DO
+#define YEND_3D  END DO  ;  END DO  ;  END DO
+
+#define MThRun if(IsMainTh) then
+#define EndMThRun end if
+
+#define YA1Di(H) TD%ntsi-TD%lflg*(H):TD%ntei+TD%rflg*(H)  
+#define YA1Dj(H) TD%ntsj-TD%uflg*(H):TD%ntej+TD%dflg*(H)
+#define YA2D(H) YA1Di(H),YA1Dj(H)
+#define YA1Di_T(T) (ntsi-nn_hls-1)*T+1:
+#define YA1Dj_T(T) (ntsj-nn_hls-1)*T+1:
+#define YA2D_T(T) YA1Di_T(T),YA1Dj_T(T)
+
+
+#define YJPI TD%ljpi:TD%rjpi
+#define YJPJ TD%ujpj:TD%djpj
+
+
+
+#define LeftRun if( btest(TD%Mask, 0) ) then 
+#define RightRun if( btest(TD%Mask, 1) ) then 
+#define UpRun if( btest(TD%Mask, 2) ) then 
+#define DownRun if( btest(TD%Mask, 3) ) then 
+
+#define LeftEndRun end if
+#define RightEndRun end if
+#define UpEndRun end if
+#define DownEndRun end if
+
+#else 
+
+
+#define TD_INIT  type(TD_T), POINTER :: TD; INTEGER :: ST, ED, TiD, NT; LOGICAL :: IsMainTh; TD=>TDS(0); LOGICAL :: IsMainTh; NT=1;TiD=0;IsMainTh=.TRUE.
+
+#define NO_MTHREAD 
+! #define Sync_Init 
+#define PTD  
+#define DTD  
+#define SYNCA
+#define SYNCB
+#define SYNCC
+
+
+
+#define ZDO_2D(L, R, B, T)  DO_2D(L, R, B, T) 
+#define ZDO_2D_OVR(L, R, B, T) DO_2D_OVR(L, R, B, T) 
+
+#define ZDO_3D(L, R, B, T, ks, ke) DO_3D(L, R, B, T, ks, ke)
+#define ZDO_3D_OVR(L, R, B, T, ks, ke) DO_3D_OVR(L, R, B, T, ks, ke)
+#define ZDO_3DS(L, R, B, T, ks, ke, ki) DO_3DS(L, R, B, T, ks, ke, ki)
+#define ZDO_3DS_OVR(L, R, B, T, ks, ke, ki) DO_3DS_OVR(L, R, B, T, ks, ke, ki)
+
+#define ZEND_2D  END_2D
+#define ZEND_3D  END_3D
+
+#define YDO_2D(L, R, B, T)  DO_2D(L, R, B, T) 
+#define YDO_2D_OVR(L, R, B, T) DO_2D_OVR(L, R, B, T) 
+#define YDO_3D(L, R, B, T, ks, ke) DO_3D(L, R, B, T, ks, ke)
+#define YDO_3D_OVR(L, R, B, T, ks, ke) DO_3D_OVR(L, R, B, T, ks, ke)
+#define YDO_3DS(L, R, B, T, ks, ke, ki) DO_3DS(L, R, B, T, ks, ke, ki)
+#define YDO_3DS_OVR(L, R, B, T, ks, ke, ki) DO_3DS_OVR(L, R, B, T, ks, ke, ki)
+#define YEND_2D  END_2D
+#define YEND_3D  END_3D
+
+
+#define IDO_2D(L, R, B, T)  DO_2D(L, R, B, T) 
+#define IDO_2D_OVR(L, R, B, T) DO_2D_OVR(L, R, B, T) 
+#define IDO_3D(L, R, B, T, ks, ke) DO_3D(L, R, B, T, ks, ke)
+#define IDO_3D_OVR(L, R, B, T, ks, ke) DO_3D_OVR(L, R, B, T, ks, ke)
+#define IDO_3DS(L, R, B, T, ks, ke, ki) DO_3DS(L, R, B, T, ks, ke, ki)
+#define IDO_3DS_OVR(L, R, B, T, ks, ke, ki) DO_3DS_OVR(L, R, B, T, ks, ke, ki)
+#define IEND_2D  END_2D
+#define IEND_3D  END_3D
+
+
+
+#define JDO_2D(L, R, B, T)  DO_2D(L, R, B, T) 
+#define JDO_2D_OVR(L, R, B, T) DO_2D_OVR(L, R, B, T) 
+#define JDO_3D(L, R, B, T, ks, ke) DO_3D(L, R, B, T, ks, ke)
+#define JDO_3D_OVR(L, R, B, T, ks, ke) DO_3D_OVR(L, R, B, T, ks, ke)
+#define JDO_3DS(L, R, B, T, ks, ke, ki) DO_3DS(L, R, B, T, ks, ke, ki)
+#define JDO_3DS_OVR(L, R, B, T, ks, ke, ki) DO_3DS_OVR(L, R, B, T, ks, ke, ki)
+#define JEND_2D  END_2D
+#define JEND_3D  END_3D
+
+
+
+#define MThRun 
+#define EndMThRun 
+
+
+
+#define YA1Di(H) A1Di(H)
+#define YA1Dj(H) A1Dj(H)
+#define YA2D(H) A2D(H)
+#define YA1Di_T(T) A1Di_T(T)
+#define YA1Dj_T(T) A1Dj_T(T)
+#define YA2D_T(T) A2D_T(T)
+
+#define YJPI    : 
+#define YJPJ    :
+
+#define LeftRun 
+#define RightRun 
+#define UpRun 
+#define DownRun 
+
+#define LeftEndRun 
+#define RightEndRun 
+#define UpEndRun 
+#define DownEndRun 
+
+#endif
+

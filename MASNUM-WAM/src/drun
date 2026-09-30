@@ -1,0 +1,153 @@
+#!/bin/bash
+EXE=./nwam_xharm2
+QUE=q_eapp
+QUE=q_genuser
+QUE=q_ky_debug
+QUE=q_zw
+QUE=q_ky_perf1
+NN=1;NPPN=16 
+[  -z $1 ] || NN=$1
+[  -z $2 ] || NPPN=$2
+
+NCPN=$( sed -n  "s/^ *NCluPNode *= *\([0-9]*\) *,/\1/p"  nwamctl.ini)
+if (( ${#NPPN}>=1 ));then
+  NGPP=$(( $NCPN/$NPPN ))
+  #modify nwamctl.ini
+  sed -i "s/^\( * *NGrpPProc *= *\)[0-9]*/\1$NGPP/;s/^\( * *NProcPNode *= *\)[0-9]*/\1$NPPN/;" nwamctl.ini
+else
+  #read from nwamctl.ini
+  NGPP=$( sed -n  "s/^ *NGrpPProc *= *\([0-9]*\) *,/\1/p"   nwamctl.ini)
+  NPPN=$( sed -n "s/^ *NProcPNode *= *\([0-9]*\) *,/\1/p"  nwamctl.ini)
+fi
+if (( $NGPP * $NPPN >$NCPN ));then
+  echo "Error NGrpPProc($NGPP) * NProcPNode($NPPN) > NCluPNode($NCPN)"
+  exit
+fi
+NP=$(( $NN*$NPPN ))
+if (( $NPPN<=16 )) ;then
+  NGPP=$(( 16/$NPPN ))
+  NCPP=$(( 38*$NGPP ))
+else
+  NCPP=1;NCPC=36;
+fi
+if (( $NP < 2 ));then
+  echo "Not surport 1 Proc,please use NO_MPI version"
+  exit
+fi
+
+id=${NN}_${NPPN}
+
+cat <<EOF >runcmd$id
+#!/bin/bash
+hn=\$(hostname)
+echo \$hn \$OMPI_COMM_WORLD_RANK start: \$(date +%T)
+if (( \$OMPI_COMM_WORLD_RANK % $NPPN ==0 ));then 
+#/work_ssd/software/performance_tune/root_proxy node_reset.sh
+/work_ssd/software/performance_tune/root_proxy clean_shm.sh
+/work_ssd/software/performance_tune/root_proxy drop_cache.sh
+/work_ssd/software/performance_tune/root_proxy open_transparent_hugepage.sh
+/work_ssd/software/performance_tune/root_proxy refresh_mem_used.sh
+#/work_ssd/software/performance_tune/root_proxy reload_sdma.sh > /dev/null
+/work_ssd/software/performance_tune/root_proxy hugepage.sh 0 0 0 0 0 0 0 0 1
+/work_ssd/software/performance_tune/root_proxy set_cpu_frequency.sh 0-607 1.55GHz quiet
+a=\$(echo \$(numactl -H|grep -E "node (1[6-9]|[23][0-9]).*free:"|sed "s/node ..//g;s/free://g;s/MB//g"))
+s=\$(printf "%s %5d/%5d hbm:%s\n" \$hn \$OMPI_COMM_WORLD_RANK \$OMPI_COMM_WORLD_SIZE  "\$a")
+n1g=\$(echo \$(cat /sys/devices/system/node/node{1[6-9],[23][0-9]}/hugepages/hugepages-1048576kB/nr_hugepages))
+n32m=\$(echo \$(cat /sys/devices/system/node/node{1[6-9],[23][0-9]}/hugepages/hugepages-32768kB/nr_hugepages))
+n2m=\$(echo \$(cat /sys/devices/system/node/node{1[6-9],[23][0-9]}/hugepages/hugepages-2048kB/nr_hugepages))
+#n64k=\$(echo \$(cat /sys/devices/system/node/node{1[6-9],[23][0-9]}/hugepages/hugepages-64kB/nr_hugepages))
+echo "\$s" 
+printf "%s %5d/%5d hpg:%s\n" \$hn \$OMPI_COMM_WORLD_RANK \$OMPI_COMM_WORLD_SIZE "\$n1g:\$n32m:\$n2m"
+#for n in \$a;do
+#  if (( \$n < 3072 )) ;then
+#    printf "%s ====Err==== %4d / %4d hbm:%s\n" \$hn \$OMPI_COMM_WORLD_RANK \$OMPI_COMM_WORLD_SIZE  "\$a"
+#    sleep 1000
+#    exit
+#  fi
+#done
+fi
+echo \$hn \$OMPI_COMM_WORLD_RANK begin: \$(date +%T)
+$EXE 
+EOF
+
+cat <<EOF >rundsub$id
+#!/bin/bash
+#DSUB -n nwam_p$NN
+#DSUB -q $QUE
+#DSUB --mpi hmpi
+#DSUB -nn $NN
+#DSUB -N  $NP
+#DSUB -rpn $NPPN
+#DSUB -oo zo_${NN}_${NPPN}_%A.log
+#DSUB -eo zo_${NN}_${NPPN}_%A.err
+##DSUB -x job
+##DSUB -nl !cn[08662]
+NP=$NP
+
+export LD_LIBRARY_PATH=/opt/HPCKit/bisheng-lib:/opt/HPCKit/hmpi-lib
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/HPCKit/kml-lib:/opt/HPCKit/kml-lib/sve512:/opt/HPCKit/kml-lib/noarch:/opt/HPCKit/kml-lib/noarch/kvml/single
+#export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/HPCKit/kml-lib/sve512/kspblas/multi:/opt/HPCKit/kml-lib/sme/kblas/multi
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/lib64/:/home/share/zhaowei/local/lib:/home/share/software/slurm/install/lib
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/work_ssd/software/HPCKit/25.2.1/kml/bisheng/lib/noarch/kvml/single:/work_ssd/software/HPCKit/25.2.1/hmpi/bisheng/release/hmpi/lib:/work_ssd/software/HPCKit/25.2.1/hmpi/bisheng/release/hucx/lib:/work_ssd/software/HPCKit/25.2.1/hmpi/bisheng/release/xucg/lib:/work_ssd/software/HPCKit/25.2.1/compiler/bisheng/lib:/work_ssd/software/HPCKit/25.2.1/compiler/gcc/lib64_public:/work_ssd/software/HPCKit/25.2.1/compiler/gcc/lib64
+#export PATH=/work_ssd/software/HPCKit/25.2.1/hmpi/bisheng/release/hmpi/bin:/work_ssd/software/HPCKit/25.2.1/hmpi/bisheng/release/hucx/bin
+
+nodes=( \$(sort \$CCS_HOST_FILE |awk '{print \$1}') )
+#\cp -f \$CCS_HOST_FILE hostf_tt
+nnd=\${#nodes[*]}
+if (( $NPPN <= 16 ));then
+  sls(){ echo \$(( \$1 * ${NCPP} ))-\$(( ( \$1 + 1 )* ${NCPP} -1 )); }
+  echo \$nnd \${nodes[*]}
+  for (( i=0;i<\$nnd;i++));do
+    for (( j=0;j<$NPPN;j++));do
+      echo rank \$(( i* $NPPN +j))=\${nodes[\$i]} slot=\$(sls \$j )
+    done
+  done > rankfile-\${CCS_JOB_ID}
+else
+  sls(){ echo \$(( ( \$1/${NCPC})* 38 + ( \$1 % ${NCPC})* ${NCPP}   ));}
+  echo \$nnd \${nodes[*]}
+  for (( i=0;i<\$nnd;i++));do
+    for (( j=0;j<$NPPN;j++));do
+      echo rank \$(( i*16+j))=\${nodes[\$i]} slot=\$(sls \$j )
+    done
+  done > rankfile-\${CCS_JOB_ID}
+fi
+
+echo MPI_NPE \$NP
+#OPT="\${OPT} --allow-run-as-root "
+#OPT="\${OPT} -np \$NP -n \$NP"          # -np l : l process in sum
+#                                          -N  m : m process per node
+#                                          -n  n : n nodes  (l+m-1)/m=n 
+#OPT="\${OPT} --map-by ppr:1:numa:PE=1"       # --map-by  ppr:n:X:PE=m   :  n:process per X, X:numa,node,??  m: m threads per X , need star thread by youurself
+#OPT="\${OPT} -x UCX_NET_DEVICES=roceroh1:1 " #  UCX_NET_DEVICES: netcard
+#OPT="\${OPT} --hostfile hostfile_\${CCS_JOB_ID}"       # --hostfile filename :nodes list,host name or ip per line
+
+OPT="\${OPT} --rankfile rankfile-\${CCS_JOB_ID} "
+OPT="\${OPT} -x PATH -x LD_LIBRARY_PATH -x UCX_TLS=rc " # -x s  : set env,s:name[=value]
+OPT="\${OPT} -x UCX_RNDV_THRESH=512K "
+OPT="\${OPT} -x BINDPROCNIC_NOSHOW=1 "
+OPT="\${OPT} -x RDMAV_HUGEPAGES_SAFE=1 "
+OPT="\${OPT} --mca rmaps_rank_file_physical true "
+OPT="\${OPT} --mca grpcomm_direct_priority 100 "
+OPT="\${OPT} --mca coll_tuned_use_dynamic_rules true "
+OPT="\${OPT} --mca plm_rsh_agent /usr/bin/ssh "
+#OPT="\${OPT} --mca orte_debug 1 "
+#OPT="\${OPT} --mca orte_base_help_aggregate 0 "
+OPT="\${OPT} --mca coll_ucg_enable_coll gather,gatherv,scatter,scatterv "
+OPT="\${OPT} -x UCG_PLANC_UCX_GATHER_ATTR=I:3"
+OPT="\${OPT} -x UCG_PLANC_UCX_GATHERV_ATTR=I:3 "
+OPT="\${OPT} -x UCG_PLANC_UCX_SCATTER_ATTR=I:2"
+OPT="\${OPT} -x UCG_PLANC_UCX_SCATTERV_ATTR=I:2 "
+OPT="\${OPT} -x UCX_RC_VERBS_ROCE_LOCAL_SUBNET=y -x UCX_UD_VERBS_ROCE_LOCAL_SUBNET=y "
+OPT="\${OPT} -n \$NP "
+
+echo \$(hostname) :mpirun \${OPT} ./runcmdl$id
+cat rankfile-\${CCS_JOB_ID}
+echo \$LD_LIBRARY_PATH
+#ldd $EXE
+date "+%D %T"
+#mpirun  \${OPT} $EXE
+mpirun  \${OPT} ./runcmd$id
+EOF
+chmod a+rx rundsub$id runcmd$id
+dsub -s rundsub$id
+

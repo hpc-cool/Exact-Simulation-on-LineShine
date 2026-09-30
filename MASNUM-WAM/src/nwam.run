@@ -1,0 +1,9 @@
+#!/bin/sh
+NP=$1
+NPD=$NP
+EXEC=nwam_nml
+jname=NWnml_${NP}
+qname=q_sw_yyz
+echo >olog.$NPD
+bsub -b -q ${qname} -priv_size 4096 -J $jname -n $NP -I ./$EXEC
+

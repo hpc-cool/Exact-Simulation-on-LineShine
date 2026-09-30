@@ -1,0 +1,69 @@
+!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+!! NEMO-TOP : GYRE_BFM configuration namelist used to overwrite SHARED/namelist_top_ref
+!-----------------------------------------------------------------------
+&namtrc_run      !   run information
+!-----------------------------------------------------------------------
+   ln_top_euler  = .true.    !  use Euler time-stepping for TOP
+   ln_rsttr      =  .false.  
+/
+!-----------------------------------------------------------------------
+&namtrc          !   tracers definition
+!-----------------------------------------------------------------------
+   jp_bgc        =  1        ! Modified runtime by BFM interface  
+   ln_my_trc     =  .true.      
+   ln_trcdta     =  .false.  !  Initialisation from data input file (T) or not (F)
+!
+!                !    name   !           title of the field            !   units    ! initial data from file or not ! 
+   sn_tracer(1)   = 'DUMMY   ' , 'Dummy tracer      '                 ,  'dummy-units' ,  .false.
+/
+!-----------------------------------------------------------------------
+&namage          !   AGE 
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namtrc_dta      !    Initialisation from data input file
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namtrc_adv      !   advection scheme for passive tracer                (default: NO selection)
+   ln_trcadv_fct  =  .false.  
+   ln_trcadv_mus  =  .true. 
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namtrc_ldf      !   lateral diffusion scheme for passive tracer        (default: NO selection)
+!-----------------------------------------------------------------------
+   ln_trcldf_tra   =  .true.     !  use active tracer setting
+/
+!-----------------------------------------------------------------------
+&namtrc_rad      !  treatment of negative concentrations 
+!-----------------------------------------------------------------------
+   ln_trcrad  =  .true.  
+/
+!-----------------------------------------------------------------------
+&namtrc_dmp      !   passive tracer newtonian damping   
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namtrc_ice      !    Representation of sea ice growth & melt effects
+!-----------------------------------------------------------------------
+   nn_ice_tr  =  -1  
+/
+!-----------------------------------------------------------------------
+&namtrc_trd      !   diagnostics on tracer trends                       ('key_trdtrc')
+!----------------------------------------------------------------------
+/
+!----------------------------------------------------------------------
+&namtrc_bc       !   data for boundary conditions
+!-----------------------------------------------------------------------
+   cn_dir_sbc   =  './'     
+   cn_dir_cbc   =  './'     
+   cn_dir_obc   =  './'     
+   ln_rnf_ctl   =  .false.  
+   rn_sbc_time  =  86400.   
+   rn_cbc_time  =  86400.   
+/
+!----------------------------------------------------------------------
+&namtrc_bdy      !   Setup of tracer boundary conditions
+!-----------------------------------------------------------------------
+/

@@ -1,0 +1,59 @@
+# compiler options for AA (using GCC compiler)
+#
+#
+# NCDF_INC    netcdf4 include file
+# NCDF_LIB    netcdf4 library
+# XIOS_INC    xios include file    (taken into accound only if key_xios is activated)
+# XIOS_LIB    xios library         (taken into accound only if key_xios is activated)
+# OASIS_INC   oasis include file   (taken into accound only if key_oasis3 is activated)
+# OASIS_LIB   oasis library        (taken into accound only if key_oasis3 is activated)
+#
+# FC          Fortran compiler command
+# FCFLAGS     Fortran compiler flags
+# FFLAGS      Fortran 77 compiler flags
+# LD          linker
+# LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries
+# FPPFLAGS    pre-processing flags
+# AR          assembler
+# ARFLAGS     assembler flags
+# MK          make
+# USER_INC    complete list of include files
+# USER_LIB    complete list of libraries to pass to the linker
+# CC          C compiler used to compile conv for AGRIF
+# CFLAGS      compiler flags used with CC
+#
+# Note that:
+#  - unix variables "$..." are accpeted and will be evaluated before calling fcm.
+#  - fcm variables are starting with a % (and not a $)
+#
+#---------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+# All NETCDF and HDF paths are empty as they are automatically defined through environment
+# variables by the load of modules
+#---------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+#
+#
+%NCDF_INC            ${NETCDF4_INCLUDE}
+%NCDF_LIB            -L${NETCDF4_DIR}/lib -lnetcdff -lnetcdf -L${HDF5_DIR}/lib -lhdf5_hl -lm
+%XIOS_INC            -I${XIOS_INC}
+%XIOS_LIB            -L${XIOS_LIB} -lxios -lstdc++
+%OASIS_INC           -I${OASIS_DIR}/build/lib/mct -I${OASIS_DIR}/build/lib/psmile.MPI1
+%OASIS_LIB           -L${OASIS_DIR}/lib -lpsmile.MPI1 -lmct -lmpeu -lscrip
+
+%CPP                 cpp -Dkey_nosignedzero
+%FC                  mpif90 -c -cpp
+# O3 breaks reproduci/restartabi-lity with gcc/12.2.0
+%FCFLAGS             -fdefault-real-8 -O2 -funroll-all-loops -fcray-pointer -ffree-line-length-none -fallow-argument-mismatch -Wno-missing-include-dirs
+%FFLAGS              %FCFLAGS
+%LD                  mpif90
+%LDFLAGS             -Wl,-rpath,${HDF5_DIR}/lib -Wl,-rpath=${NETCDF4_DIR}/lib -Wl,-rpath=${XIOS_DIR}/lib
+%FPPFLAGS            -P -traditional
+%AR                  ar
+%ARFLAGS             rs
+%MK                  make
+%USER_INC            %XIOS_INC %OASIS_INC %NCDF_INC
+%USER_LIB            %XIOS_LIB %OASIS_LIB %NCDF_LIB
+
+%CC                  gcc
+%CFLAGS              -O0 -fcommon

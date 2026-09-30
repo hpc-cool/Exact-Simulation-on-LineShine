@@ -1,0 +1,16 @@
+irrp_set_pemask begin 
+irrp_set_pemask end 
+set_rects_npcs 
+SetPartInf 
+get_nbp_recv 
+SetPnts Error 1   
+....
+irrp_SetPartSerial 
+End irrp_part_init 
+Initgsd           
+Initgsd 1 
+Initgsd 2 
+Initgsd 3   Error 1
+Initgsd 4 
+Initgsd end 
+irrp_init end                

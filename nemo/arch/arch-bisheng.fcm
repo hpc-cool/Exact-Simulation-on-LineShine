@@ -1,0 +1,24 @@
+%HDF5_HOME            /home/share/zhaowei/lll/mysoftwave/hdf5/1.12.3-bisheng-hmpi
+%NETCDF_HOME          /home/share/zhaowei/lll/mysoftwave/netcdf/4.7.4_4.5.3-bisheng-hmpi
+%MY_HOME              /home/share/zhaowei/local/lib
+
+#%HDF5_HOME            $HOME/localg/
+#%NETCDF_HOME          $HOME/localg/
+
+%NETCDF_INC           -I%NETCDF_HOME/include -I%HDF5_HOME/include
+%NETCDF_LIB           -L%NETCDF_HOME/lib -lnetcdff -lnetcdf -L /work_ssd/software/HPCKit/25.2.0/compiler/bisheng/lib/jemalloc-2mbpage -ljemalloc  -L%MY_HOME  -lmthread -lldfslp -lmpmd
+%CPP	             cpp -Dkey_nosignedzero 
+%FC	             mpif90 -c -cpp
+%FCFLAGS             -fdefault-real-8 -O3 -fdefault-double-8  -pg -fopenmp # -mcpu=hip11 -march=armv9.2-a+sme+sve+sve2
+%FFLAGS              %FCFLAGS
+%LD                  mpif90
+%LDFLAGS             
+%FPPFLAGS            -P -traditional
+%AR                  ar
+%ARFLAGS             rs
+%MK                  make
+%USER_INC            %NETCDF_INC
+%USER_LIB            %NETCDF_LIB
+
+%CC                  cc
+%CFLAGS              -O0

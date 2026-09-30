@@ -1,0 +1,9 @@
+#!/bin/bash
+#hostname > do_$OMPI_COMM_WORLD_RANK.log
+#/work_ssd/software/performance_tune/root_proxy hugepage.sh 0 0 0 0 0 1024 0 0 1
+/work_ssd/software/performance_tune/root_proxy hugepage.sh 0 0 0 0 0 0 0 0 1
+a=$( echo $(numactl -H|grep -E "node (1[6-9]|[23][0-9]).*free:"|sed "s/node ..//g;s/free://g;s/MB//g"))
+printf "%s %4d / %4d hbm:%s\n" `hostname` $OMPI_COMM_WORLD_RANK $OMPI_COMM_WORLD_SIZE  "$a"
+#printf "%s %4d / %4d hbm:%s\n" `hostname` $OMPI_COMM_WORLD_RANK $OMPI_COMM_WORLD_SIZE  "$a" > do_$OMPI_COMM_WORLD_RANK.log
+#./nwam_xharm3 >>do_$OMPI_COMM_WORLD_RANK.log
+./nwam_xharm3 

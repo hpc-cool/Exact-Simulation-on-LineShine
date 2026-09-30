@@ -1,0 +1,11 @@
+--- Makefile	2025-11-25 21:21:19.386337000 +0800
++++ Makefile	2025-12-07 22:50:12.800708000 +0800
+@@ -7,7 +7,7 @@
+ .PHONY : all mkdir
+ 
+ all :
+-	./makenemo -m $(ARCH) -r $(CFG) -n '$(MCFG)' -d 'OCE' del_key 'key_si3 key_top key_xios' -j32
++	./makenemo -m $(ARCH)  -j 32 -r $(CFG) -n '$(MCFG)' -d 'OCE' del_key 'key_si3 key_top key_xios' add_key 'MTHREAD'
+ 
+ 
+ 

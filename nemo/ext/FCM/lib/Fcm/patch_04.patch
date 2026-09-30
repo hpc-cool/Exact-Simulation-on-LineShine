@@ -1,0 +1,12 @@
+diff -Nru org/ext/FCM/lib/Fcm/Config.pm nn/ext/FCM/lib/Fcm/Config.pm
+--- org/ext/FCM/lib/Fcm/Config.pm	2025-11-25 21:22:33.733019000 +0800
++++ nn/ext/FCM/lib/Fcm/Config.pm	2025-12-06 23:49:33.621776000 +0800
+@@ -490,7 +490,7 @@
+         ARFLAGS      => 'rs',              # AR flags
+ 
+         MAKE         => 'make',            # make command
+-        MAKEFLAGS    => '',                # make flags
++        MAKEFLAGS    => '-j 20',                # make flags
+         MAKE_FILE    => '-f',              # make flag, path to Makefile
+         MAKE_SILENT  => '-s',              # make flag, silent diagnostic
+         MAKE_JOB     => '-j',              # make flag, number of jobs

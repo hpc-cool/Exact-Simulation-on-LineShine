@@ -1,0 +1,9 @@
+#!/bin/bash
+lnfs="Makefile nwamctl.ini run_arm drun runcmd"
+cd $(dirname $(dirname $(readlink -f $0)))
+pwd
+mkdir -p hist 
+for f in  $lnfs ;do
+  [ -f $f ] && rm -f $f
+  ln -sfv src/$f .
+done

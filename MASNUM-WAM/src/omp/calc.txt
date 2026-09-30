@@ -1,0 +1,48 @@
+implsch
+mean2:     //CALC pm (8+NJ)*NK+9 div 5 sqrt 1 exp 1
+A:         //CAL  pm 9 div 1 exp 1
+winter:    //CALC pm NJ*NK*150+7 div 1 exp 1
+    //CAL pm 7+(6+11*NK)*NJ div 0 sqrt 1
+mean3: //CALC pm (4+NJ)*NK+5+0.1*NK*NJ div 2 sqrt 1 tanh 1
+
+//CALA pm NWPC*(6*NJ+12*NK+163*NK*NJ+28+0.1*NK*NJ div 8 sqrt 3 exp 2 tanh 1)
+propgat.cpp
+propagats_spec1://CAL 7*NK*NJ
+propagats_geo://CAL 7*NK*NJ
+
+xnlcal:
+  p:i(NK+3*8)*NJ;
+8040*2
+225120*（14+8+4）
+  b:NK*NJ
+
+implsch
+mean2:     //CAL pm  1033:(8+NJ)*NK+9 div 5 sqrt 1 exp 1
+A:         //CAL pm     9:           div 1 exp 1
+winter:    //CAL pm 43207:NJ*NK*150+7 
+           //CAL pm  8599:7+(6+11*NK)*NJ div 0 sqrt 1
+mean3:     //CAL pm   977:(4+NJ)*NK+5+0.1*NK*NJ div 2 sqrt 1 tanh 1
+propgat.cpp//CAL pm 10752:
+propagats_spec1://CAL pm 7*NK*NJ
+propagats_geo://CAL   pm 7*NK*NJ
+
+xnlcal: 72683707 46827072
+  p:pm    1344:(NK+3*8)*NJ;
+    pm  72681595: 225120*8*(14+8+10+8/28)+
+  b:pm     768:NK*NJ
+all:
+pm:72705077 div 8 sqrt 3,exp 2 tanh 1
+456567464*72705077 
+33.1948 PFlops/step         
+212276.7409903200 PFlops/day
+239002.3629 PFlops/day
+1782.12752 Sec/day
+
+134.1107 PFlops/Sec
+
+2470.445 PFlops SME
+ 617.611 PFlogs SVE
+21.71% 
+整机20480节点SME峰值性能2470PDFlops/s,SVE峰值性能617.6PDFlops/s,
+模式除占比较小的数学函数、矩阵计算外峰值速度为134PDFlops/s,SVE峰值效率21.7
+%

@@ -1,0 +1,34 @@
+#!/bin/bash
+#DSUB -n nwam_arm3
+#DSUB -q q_eapp
+#DSUB --mpi hmpi
+#DSUB -R "cpu=608"
+#DSUB -N  2
+#DSUB -nn 2
+#DSBU -rpn 1
+#DSUB -x job
+#DSUB -oo zo_%A.log
+#DSUB -eo zo_%A.err
+##DSUB -nl !
+NP=2
+if [ -f rank_file ] ;then
+  chmod u+rw rank_file
+  rm -f rank_file
+fi
+bsdir=/work_ssd/software/HPCKit/25.2.0/
+#export LD_LIBRARY_PATH=$HOME/local/lib:$bsdir/compiler/bisheng/lib:$bsdir/hmpi/bisheng/release/hmpi/lib
+cp ${CCS_MPI_OPTIONS/* \///} rank_file
+chmod u+rw rank_file
+#OPT="$CCS_MPI_OPTIONS "
+OPT="${OPT} --hostfile rank_file "       # --hostfile filename :nodes list,host name or ip per line
+OPT="${OPT} --allow-run-as-root "
+OPT="${OPT} -np $NP -n $NP "                    # -np l : l process in sum
+#                                          -N m  : m process per node
+#                                          -n n  : n nodes  (l+m-1)/m=n 
+OPT="${OPT} -x UCX_NET_DEVICES=roceroh1:1 " #  UCX_NET_DEVICES: netcard
+OPT="${OPT} -x PATH -x LD_LIBRARY_PATH"     # -x s  : set env,s:name[=value]
+#OPT="${OPT} --map-by ppr:1:numa:PE=1"       # --map-by  ppr:n:X:PE=m   :  n:process per X, X:numa,node,??  m: m threads per X , need star thread by youurself
+hostname
+echo mpirun ${OPT} ./runcmd
+cat rank_file
+mpirun  ${OPT} ./runcmd
